@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
     SDL_Rect tile_rect[n_tiles];
 
     int carry_y = 0;
-    int tile_selected = -1;
+    int tile_selected = 0;
 
     for (int y = 0; y < n_tiles/2; y++)
     {
@@ -86,13 +86,9 @@ int main(int argc, char *argv[])
         carry_y += 10;
     }
 
-
-
-
-
-
-
-
+    Map map;
+    init_map(&map, &tileset[i_tileset], 8, 8);
+    map.size.x = cell_size * upscale * nw + 10 * nw + 10;
     SDL_Rect mouse = (SDL_Rect) {0, 0, 10, 10};
     bool mouse_b = false;
 
@@ -126,8 +122,34 @@ int main(int argc, char *argv[])
                 }
             }
         }
+
+        // Colition Detection
+        for (int y = 0; y < map.size.h; y++)
+        {
+            for (int x = 0; x < map.size.w; x++)
+            {
+                SDL_Rect rect;
+                rect.x = map.size.x + x * cell_size * upscale;
+                rect.y = map.size.y + y * cell_size * upscale;
+                rect.w = map.tiles->sprites->rect.w * upscale;
+                rect.h = map.tiles->sprites->rect.w * upscale;
+                if (check_collition(mouse, rect) == 1)
+                {
+                    if (mouse_b == true)
+                    {
+                        map.indexes[y][x] = tile_selected;
+                    }
+                    break;
+                    break;
+                }
+            }
+        }
+
+        // Render
         set_render_draw_color(screen.renderer, colors.black);
         SDL_RenderClear(screen.renderer);
+
+        map_render(screen.renderer, &map, upscale);
 
         SDL_RenderCopy(
             screen.renderer,
@@ -135,7 +157,6 @@ int main(int argc, char *argv[])
             NULL,
             &spritesheet[i_tileset].rect
         );
-
 
         for (int i = 0; i < n_tiles; i++)
         {
@@ -183,6 +204,9 @@ int main(int argc, char *argv[])
         delete_spritesheet(&spritesheet[i]);
         delete_tileset(&tileset[i]);
     }
+
+
+    delete_map(&map);
 
     SDL_DestroyRenderer(screen.renderer);
     SDL_DestroyWindow(screen.window);
