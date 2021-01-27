@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
 
 #include <SDL.h>
@@ -10,6 +11,22 @@
 
 int main(int argc, char *argv[])
 {
+
+    if (argc != 3)
+    {
+        printf("Usage: map-2d path/to/texture size\n");
+        return 1;
+    }
+
+    char* path = argv[1];
+    int size = atoi(argv[2]);
+
+    if (size <= 0) 
+    {
+        printf("size > 0\n");
+        return 1;
+    }
+
     Colors colors;
     colors.red   = (SDL_Color) {0xFF, 0x00, 0x00, 0xFF};
     colors.green = (SDL_Color) {0x00, 0xFF, 0x00, 0xFF};
@@ -30,33 +47,23 @@ int main(int argc, char *argv[])
     if (init) return 1;
 
     int cell_size = 16;
-    const int n = 2;
 
-    char *tileset_path[n] = {
-        "assets/textures/inside.png",
-        "assets/textures/outside.png"
-    };
-
-    SpriteSheet spritesheet[n];
-    TileSet tileset[n];
-
-    for (int i = 0; i < n; i++)
-    {
-        SDL_Renderer *renderer = screen.renderer;
-        SpriteSheet *temp_sheet = &spritesheet[i];
-        TileSet *temp_tileset = &tileset[i];
-        char *path = tileset_path[i];
-
-        load_spritesheet(temp_sheet, renderer, path, cell_size);
-        load_tileset(temp_tileset, temp_sheet);
+    SpriteSheet spritesheet;
+    int load = load_spritesheet(&spritesheet, screen.renderer, path, cell_size);
+    if (load == 1) {
+        printf("Unable to load %s\n", path);
+        return 1;
     }
+
+    TileSet tileset;
+    load_tileset(&tileset, &spritesheet);
+
 
     // Tileset Layout
     int upscale = 3;
 
     int nw = 4;
-    int i_tileset = 0;
-    int n_tiles = tileset[i_tileset].n;
+    int n_tiles = tileset.n;
 
     SDL_Rect tile_rect[n_tiles];
 
@@ -71,11 +78,11 @@ int main(int argc, char *argv[])
             int index = x + y * nw;
             if (index < n_tiles)
             {
-                Sprite *sprite = &tileset[i_tileset].sprites[x + y * nw];
+                Sprite *sprite = &tileset.sprites[x + y * nw];
 
                 tile_rect[index].x = x * sprite->rect.w * upscale + carry_x + 10;
                 tile_rect[index].y = y * sprite->rect.h * upscale + carry_y;
-                tile_rect[index].y += spritesheet[i_tileset].rect.h + 10;
+                tile_rect[index].y += spritesheet.rect.h + 10;
 
                 tile_rect[index].w = sprite->rect.w * upscale;
                 tile_rect[index].h = sprite->rect.h * upscale;
@@ -87,8 +94,10 @@ int main(int argc, char *argv[])
     }
 
     Map map;
-    init_map(&map, &tileset[i_tileset], 8, 8);
+    init_map(&map, &tileset, size, size);
     map.size.x = cell_size * upscale * nw + 10 * nw + 10;
+
+
     SDL_Rect mouse = (SDL_Rect) {0, 0, 10, 10};
     bool mouse_b = false;
 
@@ -153,14 +162,14 @@ int main(int argc, char *argv[])
 
         SDL_RenderCopy(
             screen.renderer,
-            spritesheet[i_tileset].texture,
+            spritesheet.texture,
             NULL,
-            &spritesheet[i_tileset].rect
+            &spritesheet.rect
         );
 
         for (int i = 0; i < n_tiles; i++)
         {
-            Sprite *sprite = &tileset[i_tileset].sprites[i];
+            Sprite *sprite = &tileset.sprites[i];
 
             if (check_collition(mouse, tile_rect[i]) == 1)
             {
@@ -199,11 +208,9 @@ int main(int argc, char *argv[])
         SDL_RenderPresent(screen.renderer);
     }
 
-    for (int i = 0; i < n; i++)
-    {
-        delete_spritesheet(&spritesheet[i]);
-        delete_tileset(&tileset[i]);
-    }
+
+    delete_spritesheet(&spritesheet);
+    delete_tileset(&tileset);
 
 
     delete_map(&map);
