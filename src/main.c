@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #include <SDL.h>
 
@@ -12,6 +13,7 @@ typedef struct
     SDL_Rect position;
     bool left_button;
 } Mouse;
+
 
 void check_events(Screen *screen, Mouse *mouse)
 {
@@ -113,6 +115,32 @@ void tileset_render(Screen *screen, TileSet *tileset, SDL_Rect tile_rect[], Colo
         );
     }
         
+}
+
+int save_map(Map *map, char *path)
+{
+    FILE *file = fopen(path, "w");
+    if (file == NULL) return 1;
+
+    uint32_t h = (uint32_t) map->size.h;
+    uint32_t w = (uint32_t) map->size.w;
+
+    fwrite(&w, sizeof(uint32_t), 1, file);
+    fwrite(&h, sizeof(uint32_t), 1, file);
+
+    for (int y = 0; y < h; y++)
+    {
+        for (int x = 0; x < w; x++)
+        {
+            uint32_t data = (uint32_t) map->indexes[y][x];
+            fwrite(&data, sizeof(uint32_t), 1, file);
+        }
+    }
+
+    fclose(file);
+    file = NULL;
+
+    return 0;
 }
 
 int main(int argc, char *argv[])
@@ -225,6 +253,7 @@ int main(int argc, char *argv[])
         SDL_RenderPresent(screen.renderer);
     }
 
+    save_map(&map, "map.map");
 
     delete_spritesheet(&spritesheet);
     delete_tileset(&tileset);
