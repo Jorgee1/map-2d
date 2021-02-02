@@ -1,5 +1,6 @@
 objs
 bin
 
+*.map
 *.o
 *.rar
