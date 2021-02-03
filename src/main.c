@@ -58,8 +58,10 @@ void collition_tileset(SDL_Rect tile_rect[], Mouse *mouse, int *tile_selected, i
                 *tile_selected = i;
             }
             *tile_hover = i;
+            return;
         }
     }
+    *tile_hover = -1;
 }
 
 void collition_map(Map *map, Mouse *mouse, int cell_size, int upscale, int tile_selected)
